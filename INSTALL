@@ -1,0 +1,38 @@
+#author Christoph Senjak and Matthias Benkard
+#date 2009-02-18 - <lisp>(format-time-string "%Y-%m-%d")</lisp>
+#title CljSSSS^g Quick Start Guide
+#desc The CljSSSS^g installation guide
+
+; Time-stamp: <2009-02-18 20:31:12 mulk>
+; 
+; C-c i t	insert-time-stamp
+; C-c C-t	muse-project-publish-this-file
+; C-c C-e	muse-edit-link-at-point
+; C-c C-i	muse-insert-thing
+
+; CljSSSS<literal><sup>g</sup></literal>
+
+
+* Dependencies
+
+The following dependencies need to be on your class path:
+
+ - Clojure
+
+ - Compojure along with all of its dependencies, including:
+   - Fact
+   - Jetty
+   - Rend
+   - The Apache Commons Logging API
+   - The Java Servlet API
+
+ - <verbatim>StringTemplate</verbatim> along with ANTLR
+
+
+----
+
+*<lisp>(format-time-string "%Y-%m-%d, %k:%M %Z")</lisp>*
+
+; Local Variables:
+; mode: muse
+; End:
