@@ -1,17 +1,16 @@
 (ns cljssss-g
-  (require [net.cgrand.enlive-html :as enlive]
-           [clojure.xml :as xml]
+  (require [clojure.xml :as xml]
            compojure)
+  (import (org.antlr.stringtemplate StringTemplateGroup))
   (use compojure))
+
+(def tgroup (new StringTemplateGroup ""))
 
 (defservlet cljssss-g
   (GET "/"
-    (html [:html
-           [:head
-            [:title "G&ouml;del-Gentzen Clojure Syndication Services Super System"]]
-           [:body
-            [:h1 "G&ouml;del-Gentzen Clojure Syndication Services Super System"]
-            [:p "Fnord."]]]))
+    (.toString
+     (doto (.getInstanceOf tgroup "index")
+       (.setAttributes {"title" "Subscriptions"}))))
   (ANY "*"
     (page-not-found)))
 
