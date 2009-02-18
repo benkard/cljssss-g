@@ -10,7 +10,8 @@
   (GET "/"
     (.toString
      (doto (.getInstanceOf tgroup "index")
-       (.setAttributes {"title" "Subscriptions"}))))
+       (.setAttributes {"title" "Subscriptions",
+                        "mainParagraph" "Hi there!"}))))
   (ANY "*"
     (page-not-found)))
 
