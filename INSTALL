@@ -3,7 +3,7 @@
 #title CljSSSS^g Quick Start Guide
 #desc The CljSSSS^g installation guide
 
-; Time-stamp: <2009-02-18 20:31:12 mulk>
+; Time-stamp: <2009-02-19 11:57:16 mulk>
 ; 
 ; C-c i t	insert-time-stamp
 ; C-c C-t	muse-project-publish-this-file
@@ -19,6 +19,8 @@ The following dependencies need to be on your class path:
 
  - Clojure
 
+ - Clojure Contrib
+
  - Compojure along with all of its dependencies, including:
    - Fact
    - Jetty
@@ -27,6 +29,8 @@ The following dependencies need to be on your class path:
    - The Java Servlet API
 
  - <verbatim>StringTemplate</verbatim> along with ANTLR
+
+ - SQLiteJDBC
 
 
 ----
