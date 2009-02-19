@@ -4,12 +4,12 @@
   (import (org.antlr.stringtemplate StringTemplateGroup))
   (use compojure))
 
-(def tgroup (new StringTemplateGroup ""))
+(def templates (new StringTemplateGroup ""))
 
 (defservlet cljssss-g
   (GET "/"
     (.toString
-     (doto (.getInstanceOf tgroup "index")
+     (doto (.getInstanceOf templates "index")
        (.setAttributes {"title" "Subscriptions",
                         "mainParagraph" "Hi there!"}))))
   (ANY "*"
