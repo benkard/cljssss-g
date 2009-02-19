@@ -35,59 +35,61 @@
      (sql/transaction
        ~@body)))
 
+(defn trim-nil [thing]
+  (and thing (.trim thing)))
+
 (defn fetch-feed [id]
   (with-db
-    (sql/with-query-results [{uri :uri}]
-                            ["SELECT uri FROM feed WHERE id = ?" id]
-      (let [feed #^SyndFeed (.build (new SyndFeedInput)
-                                    (new XmlReader (new URL uri)))]
-        (sql/transaction
-         (sql/update-or-insert-values :feed
-                                      ["id = ?" id]
-                                      {:id id
-                                       :uri uri
-                                       :language (.getLanguage feed)
-                                       :iri (.getURI feed)
-                                       :link (.getLink feed)
-                                       :rights (.trim (.getCopyright feed))
-                                       :title (.trim (.getTitle feed))
-                                       :subtitle (.trim (.getDescription feed))
-                                       :updated (.getPublishedDate feed)})
-         (doseq [entry #^SyndEntry (.getEntries feed)]
-           (sql/with-query-results [{potential-entry-id :id}]
-                                   ["SELECT id FROM entry WHERE iri = ?" (.getURI entry)]
-            (let [entry-id
-                  (or potential-entry-id
-                      (+ 1
-                         (sql/with-query-results max-id
-                                                 ["SELECT MAX(id) FROM entry"]
-                           (or max-id -1))))]
-              (sql/update-or-insert-values :entry
-                                           ["id = ?" entry-id]
-                                           {:id entry-id
-                                            :language (.getLanguage entry)
-                                            :iri (.getURI entry)
-                                            :link (.getLink entry)
-                                            :rights (.trim (.getCopyright entry))
-                                            :title (.trim (.getTitle entry))
-                                            :summary_type (if (.getDescription entry)
-                                                              (.getType (first (.getDescription entry)))
-                                                              nil)
-                                            :summary (if (.getDescription entry)
-                                                         (.getValue (first (.getDescription entry)))
-                                                         nil)
-                                            :content_type (if (.getContents entry)
-                                                              (.getType (first (.getContents entry)))
-                                                              nil)
-                                            :content (if (.getContents entry)
-                                                         (.getValue (first (.getContents entry)))
-                                                         nil)
-                                            :updated (.getUpdatedDate entry)
-                                            :published (.getPublishedDate entry)})
-           (sql/update-or-insert-values :feed_entry_link
-                                        ["feed = ?, entry = ?" id entry-id]
-                                        {:feed id
-                                         :entry entry-id})))))))))
+    (let [uri (sql/with-query-results [{uri :uri}]
+                                      ["SELECT uri FROM feed WHERE id = ?" id]
+                uri),
+          feed #^SyndFeed (.build (new SyndFeedInput)
+                                  (new XmlReader (new URL uri)))]
+      (sql/transaction
+       (sql/update-values :feed
+                          ["id = ?" id]
+                          {:language (.getLanguage feed)
+                           :iri (.getUri feed)
+                           :link (.getLink feed)
+                           :rights (trim-nil (.getCopyright feed))
+                           :title (trim-nil (.getTitle feed))
+                           :subtitle (trim-nil (.getDescription feed))
+                           :updated (.getPublishedDate feed)})
+       (doseq [entry #^SyndEntry (.getEntries feed)]
+         (sql/with-query-results [{potential-entry-id :id}]
+                                 ["SELECT id FROM entry WHERE iri = ?" (.getUri entry)]
+           (let [entry-id
+                 (or potential-entry-id
+                     (+ 1
+                        (sql/with-query-results [max-id-map]
+                                                ["SELECT MAX(id) FROM entry"]
+                                                (or (second (first max-id-map)) -1))))]
+             (sql/update-or-insert-values :entry
+                                          ["id = ?" entry-id]
+                                          {:id entry-id
+                                           :iri (.getUri entry)
+                                           :link (.getLink entry)
+                                           :title (trim-nil (.getTitle entry))
+                                           :summary_type (if (.getDescription entry)
+                                                             (.getType (.getDescription entry))
+                                                             nil)
+                                           :summary (if (.getDescription entry)
+                                                        (.getValue (.getDescription entry))
+                                                        nil)
+                                           :content_type (if (and (.getContents entry)
+                                                                  (first (.getContents entry)))
+                                                             (.getType (first (.getContents entry)))
+                                                             nil)
+                                           :content (if (and (.getContents entry)
+                                                             (first (.getContents entry)))
+                                                        (.getValue (first (.getContents entry)))
+                                                        nil)
+                                           :updated (.getUpdatedDate entry)
+                                           :published (.getPublishedDate entry)})
+             (sql/update-or-insert-values :feed_entry_link
+                                          ["feed = ? AND entry = ?" id entry-id]
+                                          {:feed id
+                                           :entry entry-id}))))))))
 
 
 (run-server {:port 8080}
@@ -128,7 +130,7 @@
                       [:rights "text"]
                       [:title "text"]
                       [:subtitle "text"]
-                      [:updated "date"]))
+                      [:updated "timestamp"]))
 
   (with-dbt
     (sql/create-table :entry
@@ -139,13 +141,13 @@
                       [:content_type "text"]
                       [:iri "text"]
                       [:link "text"]
-                      [:published "date"]
+                      [:published "timestamp"]
                       [:rights "text"]
                       [:source "integer"] ;:feed
                       [:title "text"]
                       [:summary "blob"]
                       [:summary_type "text"]
-                      [:updated "date"]))
+                      [:updated "timestamp"]))
 
   (with-dbt
     (sql/create-table :feed_entry_link
