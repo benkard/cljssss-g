@@ -63,7 +63,7 @@
                      (+ 1
                         (sql/with-query-results [max-id-map]
                                                 ["SELECT MAX(id) FROM entry"]
-                                                (or (second (first max-id-map)) -1))))]
+                          (or (second (first max-id-map)) -1))))]
              (sql/update-or-insert-values :entry
                                           ["id = ?" entry-id]
                                           {:id entry-id
