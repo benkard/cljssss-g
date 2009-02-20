@@ -9,7 +9,7 @@
 
       <body>
 	$logintext$ 
-	<form action="do_login" method="POST">
+	<form method="POST">
 	  Username: <input name="name" type="text" /> <br />
 	  Password: <input name="password" type="password" /> <br />
 	  <input type="submit" value="Log In" />
