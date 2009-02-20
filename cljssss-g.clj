@@ -91,6 +91,32 @@
                                           {:feed id
                                            :entry entry-id}))))))))
 
+;; system-wide subscription
+;; *******  FIXME: Doesnt work when no feed was subscribed yet
+(defn subscribe-to-feed [url]
+  (let [maybe-ret
+   (with-dbt
+     (if (sql/with-query-results
+	  [exi]
+	  ["SELECT id FROM feed WHERE uri=?"  url]
+	  (if exi
+	      (second (first exi))
+	      nil))
+	 nil ;; do nothing, return nil
+	 (let [free-id 
+	       (sql/with-query-results
+		[max-id]
+		 ["SELECT MAX(id) FROM feed"]
+		 (if max-id (+ (second (first max-id)) 1) 0))]
+	   (sql/update-or-insert-values :feed
+					["id = ?" free-id]
+					{:id free-id
+					     :uri url})
+	   free-id)))]
+    (if maybe-ret
+	(fetch-feed maybe-ret))
+    maybe-ret))
+
 
 (run-server {:port 8080}
   "/*" cljssss-g)
