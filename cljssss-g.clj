@@ -33,7 +33,7 @@
               (do
                 (alter session assoc :id id)
                 (redirect-to "/"))
-              (redirect-to "/login"))))))
+              (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
   (ANY "*"
     (page-not-found)))
 
