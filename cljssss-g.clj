@@ -12,8 +12,32 @@
 
 (def templates (new StringTemplateGroup ""))
 
+
+(defn login-view []
+  (.toString (.getInstanceOf templates "login")))
+
+
 (defservlet cljssss-g
-  (GET "/"
+  (GET "/login"
+       (if (= (params :wrong) "true")
+	   (.toString (doto
+		       (.getInstanceOf templates "login")
+		       (.setAttributes {"logintext" "Login failed"})))
+	   (.toString (doto
+		       (.getInstanceOf templates "login")
+		       (.setAttributes {"logintext" "Login"})))))
+  (POST "/login"
+	(dosync
+	 (with-db
+	   (sql/with-query-results [{id :id password :password}]
+				   ["SELECT id, password FROM user WHERE name = ?"
+				    (@params :name)]
+				   (if (= password (@params :password))
+				       (do
+					(alter session assoc :id id)
+					(redirect-to "/"))
+				       (redirect-to "/login?wrong=true"))))))
+  (GET "/blah/"
     (.toString
      (doto (.getInstanceOf templates "index")
        (.setAttributes {"title" "Subscriptions",
@@ -114,16 +138,8 @@
 
 ;;;; Sample database content
 (comment
-  (with-dbt
-    (sql/update-or-insert-values :feed
-                                 ["id = ?" 0]
-                                 {:id 0
-                                  :uri "http://matthias.benkard.de/journal/feed/"})
-    (sql/update-or-insert-values :feed
-                                 ["id = ?" 1]
-                                 {:id 1
-                                  :uri "http://uxul.wordpress.com/feed/"})))
-
+ (subscribe-to-feed "http://matthias.benkard.de/journal/feed/")
+ (subscribe-to-feed "http://uxul.wordpress.com/feed/"))
 
 ;;;; Database schema
 (comment
