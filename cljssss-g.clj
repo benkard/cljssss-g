@@ -38,6 +38,11 @@
 (defn trim-nil [thing]
   (and thing (.trim thing)))
 
+(defn maximum-id [table-name]
+  (sql/with-query-results [max-id-map]
+                          [(str "SELECT MAX(id) FROM " table-name)]
+    (or (second (first max-id-map)) -1)))
+
 (defn fetch-feed [id]
   (with-db
     (let [uri (sql/with-query-results [{uri :uri}]
@@ -59,11 +64,7 @@
          (sql/with-query-results [{potential-entry-id :id}]
                                  ["SELECT id FROM entry WHERE iri = ?" (.getUri entry)]
            (let [entry-id
-                 (or potential-entry-id
-                     (+ 1
-                        (sql/with-query-results [max-id-map]
-                                                ["SELECT MAX(id) FROM entry"]
-                          (or (second (first max-id-map)) -1))))]
+                 (or potential-entry-id (+ 1 (maximum-id "entry")))]
              (sql/update-or-insert-values :entry
                                           ["id = ?" entry-id]
                                           {:id entry-id
@@ -92,30 +93,22 @@
                                            :entry entry-id}))))))))
 
 ;; system-wide subscription
-;; *******  FIXME: Doesnt work when no feed was subscribed yet
 (defn subscribe-to-feed [url]
-  (let [maybe-ret
-   (with-dbt
-     (if (sql/with-query-results
-	  [exi]
-	  ["SELECT id FROM feed WHERE uri=?"  url]
-	  (if exi
-	      (second (first exi))
-	      nil))
-	 nil ;; do nothing, return nil
-	 (let [free-id 
-	       (sql/with-query-results
-		[max-id]
-		 ["SELECT MAX(id) FROM feed"]
-		 (if max-id (+ (second (first max-id)) 1) 0))]
-	   (sql/update-or-insert-values :feed
-					["id = ?" free-id]
-					{:id free-id
-					     :uri url})
-	   free-id)))]
-    (if maybe-ret
-	(fetch-feed maybe-ret))
-    maybe-ret))
+  (let [maybe-id
+        (with-dbt
+          (when-not
+              (sql/with-query-results [{id :id}]
+                                      ["SELECT id FROM feed WHERE uri=?" url]
+                id)
+            (let [free-id (+ 1 (maximum-id "feed"))]
+              (sql/update-or-insert-values :feed
+                                           ["id = ?" free-id]
+                                           {:id free-id
+                                            :uri url})
+              free-id)))]
+    (when maybe-id
+      (fetch-feed maybe-id))
+    maybe-id))
 
 
 (run-server {:port 8080}
