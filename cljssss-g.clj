@@ -101,10 +101,7 @@
                                       ["SELECT id FROM feed WHERE uri=?" url]
                 id)
             (let [free-id (+ 1 (maximum-id "feed"))]
-              (sql/update-or-insert-values :feed
-                                           ["id = ?" free-id]
-                                           {:id free-id
-                                            :uri url})
+              (sql/insert-values :feed [:id :uri] [free-id url])
               free-id)))]
     (when maybe-id
       (fetch-feed maybe-id))
