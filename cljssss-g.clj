@@ -40,14 +40,25 @@
      (with-db
 	  (sql/with-query-results [{id :id password :password}]
                                 ["SELECT id, password FROM user WHERE name = ?"
-				(@params :name)]
-				 (if (= password (@params :password))
+				(params :name)]
+				 (if (= password (params :password))
               (do
                 (alter session assoc :id id)
                 (redirect-to "/"))
               (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
+  (GET "/bare_feedlist"
+       (if (not (session :id))
+	   (redirect-to "/login")
+	   (with-dbt
+	     (sql/with-query-results
+	      [results]
+	      ["SELECT feed.link FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" 1]
+	      (loop [cstr "" r results]
+		 (if (rest r)
+		     (recur (str cstr (first r) "\n") (rest r))
+		     (str cstr (first r) "\n")))))))
   (GET "/"
-    (if (@session :id)
+    (if (session :id)
         (.toString
          (doto (.getInstanceOf templates "index")
            (.setAttributes {"title" "Subscriptions",
