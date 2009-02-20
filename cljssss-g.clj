@@ -26,10 +26,6 @@
      (sql/transaction
        ~@body)))
 
-(defn login-view []
-  (.toString (.getInstanceOf templates "login")))
-
-
 (defservlet cljssss-g
   (GET "/login"
        (if (= (params :valuesofbetawillgiverisetodom) "true")
