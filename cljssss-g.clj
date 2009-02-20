@@ -12,39 +12,6 @@
 
 (def templates (new StringTemplateGroup ""))
 
-
-(defn login-view []
-  (.toString (.getInstanceOf templates "login")))
-
-
-(defservlet cljssss-g
-  (GET "/login"
-       (if (= (params :wrong) "true")
-	   (.toString (doto
-		       (.getInstanceOf templates "login")
-		       (.setAttributes {"logintext" "Login failed"})))
-	   (.toString (doto
-		       (.getInstanceOf templates "login")
-		       (.setAttributes {"logintext" "Login"})))))
-  (POST "/login"
-	(dosync
-	 (with-db
-	   (sql/with-query-results [{id :id password :password}]
-				   ["SELECT id, password FROM user WHERE name = ?"
-				    (@params :name)]
-				   (if (= password (@params :password))
-				       (do
-					(alter session assoc :id id)
-					(redirect-to "/"))
-				       (redirect-to "/login?wrong=true"))))))
-  (GET "/blah/"
-    (.toString
-     (doto (.getInstanceOf templates "index")
-       (.setAttributes {"title" "Subscriptions",
-                        "mainParagraph" "Hi there!"}))))
-  (ANY "*"
-    (page-not-found)))
-
 (def db-connection-data {:classname   "org.sqlite.JDBC"
                          :subprotocol "sqlite"
                          :subname     "cljssss-g.sqlite3"
@@ -58,6 +25,40 @@
   `(with-db
      (sql/transaction
        ~@body)))
+
+(defn login-view []
+  (.toString (.getInstanceOf templates "login")))
+
+
+(defservlet cljssss-g
+  (GET "/login"
+       (if (= (params :valuesofbetawillgiverisetodom) "true")
+	   (.toString (doto
+		       (.getInstanceOf templates "login")
+		       (.setAttributes {"logintext" "Login failed"})))
+	   (.toString (doto
+		       (.getInstanceOf templates "login")
+		       (.setAttributes {"logintext" "Login"})))))
+  (POST "/login"
+	(dosync
+     (with-db
+	  (sql/with-query-results [{id :id password :password}]
+                                ["SELECT id, password FROM user WHERE name = ?"
+				(@params :name)]
+				 (if (= password (@params :password))
+              (do
+                (alter session assoc :id id)
+                (redirect-to "/"))
+              (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
+  (GET "/"
+    (if (@session :id)
+        (.toString
+         (doto (.getInstanceOf templates "index")
+           (.setAttributes {"title" "Subscriptions",
+                            "mainParagraph" "Hi there!"})))
+        (redirect-to "/login")))
+  (ANY "*"
+    (page-not-found)))
 
 (defn trim-nil [thing]
   (and thing (.trim thing)))
