@@ -14,10 +14,26 @@
 
 (defservlet cljssss-g
   (GET "/"
-    (.toString
-     (doto (.getInstanceOf templates "index")
-       (.setAttributes {"title" "Subscriptions",
-                        "mainParagraph" "Hi there!"}))))
+    (if (@session :id)
+        (.toString
+         (doto (.getInstanceOf templates "index")
+           (.setAttributes {"title" "Subscriptions",
+                            "mainParagraph" "Hi there!"})))
+        (redirect-to "/login")))
+  (GET "/login"
+    ;; FIXME
+    )
+  (POST "/login"
+    (dosync
+      (with-db
+        (sql/with-query-results [{id :id password :password}]
+                                ["SELECT id, password FROM user WHERE name = ?"
+                                 (@params :name)]
+          (if (= password (@params :password))
+              (do
+                (alter session assoc :id id)
+                (redirect-to "/"))
+              (redirect-to "/login"))))))
   (ANY "*"
     (page-not-found)))
 
