@@ -26,6 +26,69 @@
      (sql/transaction
        ~@body)))
 
+(defn opml-init [text xmlurl htmlurl]
+  (ref {:text text :xmlurl xmlurl :htmlurl htmlurl}))
+
+(defn opml-getText [this]
+  (this :text))
+(defn opml-getXmlurl [this]
+  (this :xmlurl))
+(defn opml-getHtmlurl [this]
+  (this :htmlurl))
+
+;(gen-interface
+; :name opmliface
+; :prefix "opml-"
+; :init init
+; :methods [[getXmlurl [] String]
+;	   [getHtmlurl [] String]
+;	   [getText [] String]])
+
+;;; FIXME: clojure has no way of creating interfaces on-the-fly. So I
+;;; cannot use stringtemplate here.
+(defn opml-string [id]
+  (with-dbt
+    (sql/with-query-results
+     results
+     ["SELECT feed.uri, feed.link, user_feed_link.title FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" id]
+     (str "<?xml version=\"1.0\" encoding=\"utf-8\"?><opml version=\"1.0\"><head>"
+	  "<dateCreated>blah</dateCreated>"
+	  "<title>G&ouml;del-Gentzen Clojure Syndication Services Super System Feed Export</title></head><body>"
+      (loop [clstr "" r results]
+	 (if (first r)
+	     (recur
+	      (str clstr
+		   "<outline text=\""
+		   (:title (first r))
+		   "\" xmlUrl=\""
+		   (:uri (first r))
+		   "\" htmlUrl=\""
+		   (:link (first r))
+		   "\" />")
+	      (rest r))
+	     clstr))
+      "</body></opml>"))))
+;     (let [template-object (.getInstanceOf templates "opml"),
+;	   feeds
+;	   (to-array 
+;	    (loop [clst '() r results]
+;	       (if (first r)
+;		   (recur
+;		    (concat
+;		     clst
+;		     (list (proxy [Object] []
+;				  (getText []
+;					   ((first r) :title))
+;				  (getXmlurl []
+;					     ((first r) :uri))
+;				  (getHtmlurl []
+;					      ((first r) :link)))))
+;		    (rest r))
+		   clst)))]
+;       (. template-object setAttribute "date" "heute")
+;       (. template-object setAttribute "feeds" feeds)
+;       (.toString template-object)))))
+
 (defservlet cljssss-g
   (GET "/login"
        (if (= (params :valuesofbetawillgiverisetodom) "true")
@@ -46,17 +109,10 @@
                 (alter session assoc :id id)
                 (redirect-to "/"))
               (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
-  (GET "/bare_feedlist"
+  (GET "/feedlist.opml"
        (if (not (session :id))
 	   (redirect-to "/login")
-	   (with-dbt
-	     (sql/with-query-results
-	      [results]
-	      ["SELECT feed.link FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" 1]
-	      (loop [cstr "" r results]
-		 (if (rest r)
-		     (recur (str cstr (first r) "\n") (rest r))
-		     (str cstr (first r) "\n")))))))
+	   (opml-string (session :id))))
   (GET "/"
     (if (session :id)
         (.toString
