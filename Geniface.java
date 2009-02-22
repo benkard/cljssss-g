@@ -34,7 +34,7 @@ public class Geniface {
     }
  
     public Geniface () {
-	this("/tmp");
+	this(System.getProperty("java.io.tmpdir"));
     }
  
     public void addMethod (String name, int ObjectArgCount, boolean ret) {
