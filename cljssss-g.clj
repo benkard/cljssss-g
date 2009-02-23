@@ -26,13 +26,11 @@
      (sql/transaction
        ~@body)))
 
-;;; FIXME: clojure has no way of creating interfaces on-the-fly. So I
-;;; cannot use stringtemplate here.
-(defn opml-string [id]
+(defn opml-string [user]
   (with-dbt
     (sql/with-query-results
          results
-         ["SELECT feed.uri, feed.link, user_feed_link.title FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" id]
+         ["SELECT feed.uri, feed.link, user_feed_link.title FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" user]
       (.toString (doto (.getInstanceOf templates "opml")
                    (.setAttributes {"date" ""  ;FIXME
                                     "feeds"
@@ -44,53 +42,49 @@
                                               "htmlurl" link})
                                            results)}))))))
 
-(defn lynxy-feedlist [id]
+(defn lynxy-feedlist [feed]
   (with-dbt
     (sql/with-query-results
-     results
-     [(str "SELECT feed.id, feed.uri, feed.link, user_feed_link.title"
-           " FROM feed, user_feed_link"
-           " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?")
-      id]
-     (html
-      `[html
-        [head [title "G&ouml;del-Gentzen Clojure Syndication Services Super System"]]
-        [body [ul
-               ~@(loop [back '[] r results]
-                   (if (first r)
-                       (recur (concat back `[[li
-                                              [a {:href ~(str "lynxy-showfeed?feed=" (:id (first r)))}
-                                               ~(:title (first r)) " - "
-                                               ~(:link (first r))
-                                               ]]])
-                              (rest r))
-                       back))]]]))))
+         results
+         [(str "SELECT feed.id, feed.uri, feed.link, user_feed_link.title"
+               " FROM feed, user_feed_link"
+               " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?")
+          feed]
+      (.toString (doto (.getInstanceOf templates "simple-feed-list")
+                   (.setAttributes {"feeds"
+                                      (map (fn [{title :title
+                                                 id :id
+                                                 link :link}]
+                                             {"title" title
+                                              "id" id
+                                              "link" link})
+                                           results)}))))))
 
-(defn lynxy-showfeed [id feednum]
+(defn lynxy-showfeed [user feed]
   (with-dbt
-    (sql/with-query-results
-     results
-     [(str "SELECT entry.link, entry.title"
-           " FROM entry, feed_entry_link, user_feed_link"
-           " WHERE entry.id = feed_entry_link.entry"
-           "   AND feed_entry_link.feed = user_feed_link.feed"
-           "   AND user_feed_link.user = ?"
-           "   AND user_feed_link.feed = ?")
-      id feednum]
-     (html
-      `[html
-        [head [title "G&ouml;del-Gentzen Clojure Syndication Services Super System"]]
-        [body [ul
-               ~@(loop [back '[] r results]
-                   (if (first r)
-                       (recur (concat back `[[li
-                                              [a {:href ~(:link (first r))}
-                                               ~(:title (first r)) " - "
-                                               ~(:link (first r))
-                                               ]]])
-                              (rest r))
-                       back))]
-         [a {:href "lynxy-feedlist.html"} "&laquo; To Feedlist"]]]))))
+    (sql/with-query-results [{feed-name :title}]
+                            [(str "SELECT user_feed_link.title"
+                                  " FROM feed, user_feed_link"
+                                  " WHERE user_feed_link.feed = ?"
+                                  "   AND user_feed_link.user = ?")
+                             feed user]
+      (sql/with-query-results
+           results
+           [(str "SELECT entry.link, entry.title"
+                 " FROM entry, feed_entry_link, user_feed_link"
+                 " WHERE entry.id = feed_entry_link.entry"
+                 "   AND feed_entry_link.feed = user_feed_link.feed"
+                 "   AND user_feed_link.user = ?"
+                 "   AND user_feed_link.feed = ?")
+            user feed]
+       (.toString (doto (.getInstanceOf templates "simple-entry-list")
+                    (.setAttributes {"feed_name" feed-name
+                                     "entries"
+                                       (map (fn [{title :title
+                                                  link :link}]
+                                              {"title" title
+                                               "link" link})
+                                            results)})))))))
 
 (defmacro with-session [& body]
   `(if (not (~'session :id))
