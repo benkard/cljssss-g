@@ -212,7 +212,17 @@
 ;;;; Sample database content
 (comment
  (subscribe-to-feed "http://matthias.benkard.de/journal/feed/")
- (subscribe-to-feed "http://uxul.wordpress.com/feed/"))
+ (subscribe-to-feed "http://uxul.wordpress.com/feed/")
+ (with-dbt
+   (sql/insert-values :user
+                      [:id :name :password]
+                      [0 "mulk" "klum"])
+   (sql/insert-values :user_feed_link
+                      [:user :feed :title]
+                      [0 0 "Kompottkins Weisheiten"])
+   (sql/insert-values :user_feed_link
+                      [:user :feed :title]
+                      [0 1 "Dijkstrabühl"])))
 
 ;;;; Database schema
 (comment
