@@ -100,29 +100,29 @@
 
 (defservlet cljssss-g
   (GET "/login"
-       (if (= (params :valuesofbetawillgiverisetodom) "true")
-           (.toString (doto (.getInstanceOf templates "login")
-                        (.setAttributes {"logintext" "Login failed"})))
-           (.toString (doto (.getInstanceOf templates "login")
-                        (.setAttributes {"logintext" "Login"})))))
+    (if (= (params :valuesofbetawillgiverisetodom) "true")
+        (.toString (doto (.getInstanceOf templates "login")
+                     (.setAttributes {"logintext" "Login failed"})))
+        (.toString (doto (.getInstanceOf templates "login")
+                     (.setAttributes {"logintext" "Login"})))))
   (POST "/login"
-        (dosync
-         (with-db
-           (sql/with-query-results [{id :id password :password}]
-                                   ["SELECT id, password FROM user WHERE name = ?"
-                                    (params :name)]
-             (if (= password (params :password))
-               (do
-                 (alter session assoc :id id)
-                 (redirect-to "/"))
-               (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
+    (dosync
+      (with-db
+        (sql/with-query-results [{id :id password :password}]
+                                ["SELECT id, password FROM user WHERE name = ?"
+                                 (params :name)]
+          (if (= password (params :password))
+              (do
+                (alter session assoc :id id)
+                (redirect-to "/"))
+              (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
   (GET "/feedlist.opml"
-       (with-session (opml-string (session :id))))
+    (with-session (opml-string (session :id))))
   (GET "/lynxy-feedlist.html"
-       (with-session (lynxy-feedlist (session :id))))
+    (with-session (lynxy-feedlist (session :id))))
   (GET "/lynxy-showfeed"
-       (with-session
-         (lynxy-showfeed (session :id) (. Integer parseInt (params :feed)))))
+    (with-session
+      (lynxy-showfeed (session :id) (. Integer parseInt (params :feed)))))
   (GET "/"
     (with-session
       (.toString
