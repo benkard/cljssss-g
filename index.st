@@ -5,9 +5,9 @@ $header(title=title)$
 
 $footer()$
 
-<!--
+$!
 Local Variables:
   mode: html
   coding: utf-8
 End:
--->
+!$

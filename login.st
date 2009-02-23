@@ -10,9 +10,9 @@ $header(title=logintext)$
 
 $footer()$
 
-<!--
+$!
 Local Variables:
   mode: html
   coding: utf-8
 End:
--->
+!$
