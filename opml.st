@@ -2,7 +2,7 @@
 <opml version="1.0">
  <head>
   <dateCreated>$date$</dateCreated>
-  <title>G&ouml;del-Gentzen Clojure Syndication Services Super System Feed Export</title>
+  <title>G&#246;del-Gentzen Clojure Syndication Services Super System Feed Export</title>
  </head>
  <body>
   $feeds:{f |

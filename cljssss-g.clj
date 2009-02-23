@@ -31,26 +31,18 @@
 (defn opml-string [id]
   (with-dbt
     (sql/with-query-results
-     results
-     ["SELECT feed.uri, feed.link, user_feed_link.title FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" id]
-     (str
-      "<?xml version=\"1.0\" encoding=\"utf-8\"?><opml version=\"1.0\"><head>"
-      "<dateCreated>blah</dateCreated>"
-      "<title>G&ouml;del-Gentzen Clojure Syndication Services Super System Feed Export</title></head><body>"
-      (loop [clstr "" r results]
-        (if (first r)
-            (recur
-             (str clstr
-                  "<outline text=\""
-                  (:title (first r))
-                  "\" xmlUrl=\""
-                  (:uri (first r))
-                  "\" htmlUrl=\""
-                  (:link (first r))
-                  "\" />")
-             (rest r))
-            clstr))
-      "</body></opml>"))))
+         results
+         ["SELECT feed.uri, feed.link, user_feed_link.title FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" id]
+      (.toString (doto (.getInstanceOf templates "opml")
+                   (.setAttributes {"date" ""  ;FIXME
+                                    "feeds"
+                                      (map (fn [{title :title
+                                                 uri :uri
+                                                 link :link}]
+                                             {"text" title
+                                              "xmlurl" uri
+                                              "htmlurl" link})
+                                           results)}))))))
 
 (defn lynxy-feedlist [id]
   (with-dbt
