@@ -17,9 +17,6 @@
                          :subname     "cljssss-g.sqlite3"
                          :create      true})
 
-;; FIXME: WAAAAAAAAAH!
-(def session {:id false})
-
 (defmacro with-db [& body]
   `(sql/with-connection db-connection-data
      ~@body))
@@ -91,10 +88,10 @@
 		]]))))
 
 (defmacro with-session [& body]
-  `(if (not (session :id))
+  `(if (not (~'session :id))
        (redirect-to "/login")
        (do ~@body)))
-      
+
 
 (defservlet cljssss-g
   (GET "/login"
