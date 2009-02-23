@@ -30,7 +30,11 @@
   (with-dbt
     (sql/with-query-results
          results
-         ["SELECT feed.uri, feed.link, user_feed_link.title FROM feed, user_feed_link WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?" user]
+         [(str "SELECT feed.uri, feed.link, user_feed_link.title"
+               " FROM feed, user_feed_link"
+               " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?"
+               " ORDER BY user_feed_link.title")
+          user]
       (.toString (doto (.getInstanceOf templates "opml")
                    (.setAttributes {"date" ""  ;FIXME
                                     "feeds"
@@ -48,7 +52,8 @@
          results
          [(str "SELECT feed.id, feed.uri, feed.link, user_feed_link.title"
                " FROM feed, user_feed_link"
-               " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?")
+               " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?"
+               " ORDER BY user_feed_link.title")
           feed]
       (.toString (doto (.getInstanceOf templates "simple-feed-list")
                    (.setAttributes {"feeds"
@@ -75,7 +80,8 @@
                  " WHERE entry.id = feed_entry_link.entry"
                  "   AND feed_entry_link.feed = user_feed_link.feed"
                  "   AND user_feed_link.user = ?"
-                 "   AND user_feed_link.feed = ?")
+                 "   AND user_feed_link.feed = ?"
+                 " ORDER BY entry.published DESC")
             user feed]
        (.toString (doto (.getInstanceOf templates "simple-entry-list")
                     (.setAttributes {"feed_name" feed-name
