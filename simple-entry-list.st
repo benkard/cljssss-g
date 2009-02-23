@@ -1,4 +1,4 @@
-$header(title="$feed_name$")$
+$header(title=feed_name)$
 
 <ul>
 $entries:{entry |
