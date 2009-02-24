@@ -145,8 +145,9 @@
     (let [uri (sql/with-query-results [{uri :uri}]
                                       ["SELECT uri FROM feed WHERE id = ?" id]
                 uri),
-          feed #^SyndFeed (.build (new SyndFeedInput)
-                                  (new XmlReader (new URL uri)))]
+          #^SyndFeed
+          feed (.build (new SyndFeedInput)
+                       (new XmlReader (new URL uri)))]
       (sql/transaction
        (sql/update-values :feed
                           ["id = ?" id]
@@ -157,7 +158,7 @@
                            :title (trim-nil (.getTitle feed))
                            :subtitle (trim-nil (.getDescription feed))
                            :updated (.getPublishedDate feed)})
-       (doseq [entry #^SyndEntry (.getEntries feed)]
+       (doseq [#^SyndEntry entry (.getEntries feed)]
          (sql/with-query-results [{potential-entry-id :id}]
                                  ["SELECT id FROM entry WHERE iri = ?" (.getUri entry)]
            (let [entry-id
