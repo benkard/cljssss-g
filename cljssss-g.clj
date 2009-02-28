@@ -60,51 +60,71 @@
                                               "htmlurl" link})
                                            results)}))))))
 
-(defn lynxy-feedlist [feed]
-  (with-dbt
-    (sql/with-query-results
-         results
-         [(str "SELECT feed.id, feed.uri, feed.link, user_feed_link.title"
-               " FROM feed, user_feed_link"
-               " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?"
-               " ORDER BY user_feed_link.title")
-          feed]
-      (.toString (doto (.getInstanceOf templates "simple-feed-list")
-                   (.setAttributes {"feeds"
-                                      (map (fn [{title :title
-                                                 id :id
-                                                 link :link}]
-                                             {"title" title
-                                              "id" id
-                                              "link" link})
-                                           results)}))))))
+(defn select-feeds [user]
+  (sql/with-query-results
+       results
+       [(str "SELECT feed.id, feed.uri, feed.link, user_feed_link.title"
+             " FROM feed, user_feed_link"
+             " WHERE user_feed_link.feed=feed.id AND user_feed_link.user=?"
+             " ORDER BY user_feed_link.title")
+        user]
+    (doall (map (fn [{title :title
+                      id :id
+                      link :link}]
+                  {"title" title
+                   "id" id
+                   "link" link})
+                results))))
+
+(defn select-feed-name [user feed-id]
+  (sql/with-query-results [{feed-name :title}]
+                          [(str "SELECT user_feed_link.title"
+                                " FROM feed, user_feed_link"
+                                " WHERE user_feed_link.feed = ?"
+                                "   AND user_feed_link.user = ?")
+                           feed-id user]
+    feed-name))
+
+(defn select-entries [user feed-id active-entry-id]
+  (sql/with-query-results
+       results
+       [(str "SELECT entry.link, entry.title, entry.id"
+             " FROM entry, feed_entry_link, user_feed_link"
+             " WHERE entry.id = feed_entry_link.entry"
+             "   AND feed_entry_link.feed = user_feed_link.feed"
+             "   AND user_feed_link.user = ?"
+             "   AND user_feed_link.feed = ?"
+             " ORDER BY entry.published DESC")
+        user feed-id]
+    (doall (map (fn [{title :title
+                      link :link
+                      id :id}]
+                  {"title" title
+                   "link" link
+                   "id" id
+                   "active_p" (= active-entry-id id)})
+                results))))
+
+(defn lynxy-feedlist [user]
+  (with-db
+    (.toString (doto (.getInstanceOf templates "simple-feed-list")
+                 (.setAttributes {"feeds" (select-feeds user)})))))
 
 (defn lynxy-showfeed [user feed]
-  (with-dbt
-    (sql/with-query-results [{feed-name :title}]
-                            [(str "SELECT user_feed_link.title"
-                                  " FROM feed, user_feed_link"
-                                  " WHERE user_feed_link.feed = ?"
-                                  "   AND user_feed_link.user = ?")
-                             feed user]
-      (sql/with-query-results
-           results
-           [(str "SELECT entry.link, entry.title"
-                 " FROM entry, feed_entry_link, user_feed_link"
-                 " WHERE entry.id = feed_entry_link.entry"
-                 "   AND feed_entry_link.feed = user_feed_link.feed"
-                 "   AND user_feed_link.user = ?"
-                 "   AND user_feed_link.feed = ?"
-                 " ORDER BY entry.published DESC")
-            user feed]
-       (.toString (doto (.getInstanceOf templates "simple-entry-list")
-                    (.setAttributes {"feed_name" feed-name
-                                     "entries"
-                                       (map (fn [{title :title
-                                                  link :link}]
-                                              {"title" title
-                                               "link" link})
-                                            results)})))))))
+  (with-db
+    (.toString (doto (.getInstanceOf templates "simple-entry-list")
+                 (.setAttributes {"feed_name" (select-feed-name user feed)
+                                  "entries" (select-entries user feed nil)})))))
+
+(defn show-subscriptions [user feed active-entry-id]
+  (with-db
+    (.toString (doto (.getInstanceOf templates "index")
+                 (.setAttributes {"feeds" (select-feeds user)
+                                  "entries" (when feed (select-entries user
+                                                                       feed
+                                                                       active-entry-id))
+                                  "active_feed_id" feed
+                                  "title" "Subscriptions"})))))
 
 (defmacro with-session
   "Rebind Compojure's magic lexical variables as vars."
@@ -137,11 +157,9 @@
     (with-session
       (lynxy-showfeed (session :id) (Integer/parseInt (params :feed)))))
   (GET "/"
-    (with-session
-      (.toString
-       (doto (.getInstanceOf templates "index")
-         (.setAttributes {"title" "Subscriptions",
-                          "mainParagraph" "Hi there!"})))))
+    (with-session (show-subscriptions (session :id) (params :feed) nil)))
+  (GET "/entries/*"
+    (with-session (show-subscriptions (session :id) (params :feed) 5)))
   (ANY "*"
     (page-not-found)))
 
