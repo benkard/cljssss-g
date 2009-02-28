@@ -94,28 +94,24 @@
 
 (defmacro with-session [& body]
   `(if (not (~'session :id))
-       (redirect-to "/login")
+       (if (= (~'params :valuesofbetawillgiverisetodom) "true")
+           (.toString (doto (.getInstanceOf templates "login")
+                        (.setAttributes {"logintext" "Login failed"})))
+           (.toString (doto (.getInstanceOf templates "login")
+                        (.setAttributes {"logintext" "Login"}))))
        (do ~@body)))
 
 
 (defservlet cljssss-g
-  (GET "/login"
-    (if (= (params :valuesofbetawillgiverisetodom) "true")
-        (.toString (doto (.getInstanceOf templates "login")
-                     (.setAttributes {"logintext" "Login failed"})))
-        (.toString (doto (.getInstanceOf templates "login")
-                     (.setAttributes {"logintext" "Login"})))))
   (POST "/login"
     (dosync
       (with-db
         (sql/with-query-results [{id :id password :password}]
                                 ["SELECT id, password FROM user WHERE name = ?"
                                  (params :name)]
-          (if (= password (params :password))
-              (do
-                (alter session assoc :id id)
-                (redirect-to "/"))
-              (redirect-to "/login?valuesofbetawillgiverisetodom=true"))))))
+          (when (= password (params :password))
+            (alter session assoc :id id))
+          (redirect-to (or (headers :referer) "/"))))))
   (GET "/feedlist.opml"
     (with-session (opml-string (session :id))))
   (GET "/lynxy-feedlist.html"
