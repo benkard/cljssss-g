@@ -26,6 +26,20 @@
      (sql/transaction
        ~@body)))
 
+(def web-vars '(context cookies headers method params request response
+                route session))
+
+(defmacro define-web-vars []
+  `(do
+     ~@(into () (map (fn [varname] `(def ~varname)) web-vars))))
+
+(define-web-vars)
+
+(defmacro with-web-vars [& body]
+  `(binding ~(into [] (mapcat (fn [varname] `[~varname ~varname])
+                              web-vars))
+     ~@body))
+
 (defn opml-string [user]
   (with-dbt
     (sql/with-query-results
@@ -92,14 +106,17 @@
                                                "link" link})
                                             results)})))))))
 
-(defmacro with-session [& body]
-  `(if (not (~'session :id))
-       (if (= (~'params :valuesofbetawillgiverisetodom) "true")
-           (.toString (doto (.getInstanceOf templates "login")
-                        (.setAttributes {"logintext" "Login failed"})))
-           (.toString (doto (.getInstanceOf templates "login")
-                        (.setAttributes {"logintext" "Login"}))))
-       (do ~@body)))
+(defmacro with-session
+  "Rebind Compojure's magic lexical variables as vars."
+  [& body]
+  `(with-web-vars
+     (if (not (session :id))
+         (if (= (params :valuesofbetawillgiverisetodom) "true")
+             (.toString (doto (.getInstanceOf templates "login")
+                          (.setAttributes {"logintext" "Login failed"})))
+             (.toString (doto (.getInstanceOf templates "login")
+                          (.setAttributes {"logintext" "Login"}))))
+         (do ~@body))))
 
 
 (defservlet cljssss-g
