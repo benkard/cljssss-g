@@ -135,7 +135,7 @@
     (with-session (lynxy-feedlist (session :id))))
   (GET "/lynxy-showfeed"
     (with-session
-      (lynxy-showfeed (session :id) (. Integer parseInt (params :feed)))))
+      (lynxy-showfeed (session :id) (Integer/parseInt (params :feed)))))
   (GET "/"
     (with-session
       (.toString
