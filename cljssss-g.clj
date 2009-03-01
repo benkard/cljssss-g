@@ -295,10 +295,11 @@ to merely being replaced with a div element)?"
                                            (Integer/parseInt (params :feed)))
                                       nil)))
   (GET "/entries/*"
-    (with-session (show-subscriptions (session :id)
-                                      (and (params :feed)
-                                           (Integer/parseInt (params :feed)))
-                                      5)))  ;FIXME
+    (let [[match entry-id-string] (re-find #"^/entries/(.*)" path)]
+      (with-session (show-subscriptions (session :id)
+                                        (and (params :feed)
+                                             (Integer/parseInt (params :feed)))
+                                        (Integer/parseInt entry-id-string)))))
   (GET "/layout.css"
     (serve-file "layout.css"))
   (ANY "*"
