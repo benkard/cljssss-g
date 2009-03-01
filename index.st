@@ -29,7 +29,9 @@ $if(entries)$
     $! FIXME: Show content inline if possible. !$
     <li class="full-entry">
       <a id="entry-$entry.id$" href="$entry.link$"><h3>$entry.title$</h3></a>
+      $if(xhtml_content_p)$
       <div class="entry-content">$xhtml_content$</div>
+      $endif$
     </li>
     $else$
     <li class="partial-entry">

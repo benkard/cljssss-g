@@ -257,17 +257,20 @@ to merely being replaced with a div element)?"
 
 (defn show-subscriptions [user feed active-entry-id]
   (with-db
-    (.toString (doto (.getInstanceOf templates "index")
-                 (.setAttributes {"feeds" (select-feeds user feed)
-                                  "entries" (when feed (select-entries user
-                                                                       feed
-                                                                       active-entry-id))
-                                  "active_feed_id" feed
-                                  "active_feed_title" (and feed
-                                                           (select-feed-name user feed))
-                                  "title" "Subscriptions"
-                                  "xhtml_content" (and active-entry-id
-                                                       (entry-xhtml-content active-entry-id))})))))
+    (.toString
+     (let [xhtml-content (and active-entry-id
+                              (entry-xhtml-content active-entry-id))]
+       (doto (.getInstanceOf templates "index")
+         (.setAttributes {"feeds" (select-feeds user feed)
+                          "entries" (when feed (select-entries user
+                                                               feed
+                                                               active-entry-id))
+                          "active_feed_id" feed
+                          "active_feed_title" (and feed
+                                                   (select-feed-name user feed))
+                          "title" "Subscriptions"
+                          "xhtml_content_p" (not (nil? xhtml-content))
+                          "xhtml_content" xhtml-content}))))))
 
 (defmacro with-session
   "Rebind Compojure's magic lexical variables as vars."
