@@ -2,6 +2,7 @@
   (require [clojure.xml :as xml]
            [clojure.zip :as zip]
            [clojure.contrib.sql :as sql]
+           [clojure.contrib.str-utils :as str-utils]
            clojure.contrib.zip-filter.xml
            compojure)
   (import (org.antlr.stringtemplate StringTemplateGroup)
@@ -182,10 +183,35 @@ to merely being replaced with a div element)?"
     :tag new-tag-name
     :attrs nil))
 
+(defn escape-xml [string]
+  (str-utils/re-gsub #"<" "&#60;"
+                     (str-utils/re-gsub #">" "&#62;" string)))
+
+(defn escape-string [string]
+  (str-utils/re-gsub #"\"" "\\\\\"" string))
+
+(defn print-xml [node]
+  (if (string? node)
+      (print (escape-xml node))
+      (let [{tag :tag, attrs :attrs, content :content} node]
+        (printf "<%s" (name tag))
+        (doseq [[attr-name attr] attrs]
+          (when-not (= attr-name :shape)
+            (printf " %s=\"%s\""
+                    (name attr-name)
+                    (escape-string attr))))
+        (print ">")
+        (doall (map print-xml content))
+        (printf "</%s>" (name tag)))))
+
+(defn print-xml-to-string [xml]
+  (with-out-str (print-xml xml)))
+
 (defn prepare-content
   [xml]
   "Make HTML content safe for displaying by removing suspicious content."
-  ;; FIXME: Output a string rather than a tree.
+  ;; FIXME: Remove Javascript href and src attributes.
+  ;; FIXME: Remove on<foo> handler attributes such as onclick.
   (let [tree (-> (zip/xml-zip xml)
                  (zip/edit retag :div))]
     (loop [loc tree]
@@ -196,6 +222,9 @@ to merely being replaced with a div element)?"
                     (cond (or (string? node) (safe-tag? node)) loc
                           (tag-to-kill? node) (zip/remove loc)
                           true (zip/edit loc retag :span)))))))))
+
+(defn prepare-content-string [xml]
+  (print-xml-to-string (prepare-content xml)))
 
 (defn entry-xhtml-content [entry]
   (sql/with-query-results
@@ -208,11 +237,11 @@ to merely being replaced with a div element)?"
       (cond (nil? content)
               nil
             (= content-type "xhtml")
-              (prepare-content (xml/parse (make-string-input content)))
+              (prepare-content-string (xml/parse (make-string-input content)))
             (or (= content-type "html") (= content-type "text/html"))
-              (prepare-content (html->xhtml (unescape content)))
+              (prepare-content-string (html->xhtml (unescape content)))
             (or (= content-type "text") (nil? content-type))
-              (prepare-content (text->xhtml content))
+              (prepare-content-string (text->xhtml content))
             true
               nil))))
 
