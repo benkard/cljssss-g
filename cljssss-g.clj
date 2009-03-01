@@ -124,7 +124,8 @@
                                                                        feed
                                                                        active-entry-id))
                                   "active_feed_id" feed
-                                  "active_feed_title" (and feed (select-feed-name feed user))
+                                  "active_feed_title" (and feed
+                                                           (select-feed-name user feed))
                                   "title" "Subscriptions"})))))
 
 (defmacro with-session
@@ -158,9 +159,13 @@
     (with-session
       (lynxy-showfeed (session :id) (Integer/parseInt (params :feed)))))
   (GET "/"
-    (with-session (show-subscriptions (session :id) (params :feed) nil)))
+    (with-session (show-subscriptions (session :id)
+                                      (Integer/parseInt (params :feed))
+                                      nil)))
   (GET "/entries/*"
-    (with-session (show-subscriptions (session :id) (params :feed) 5)))
+    (with-session (show-subscriptions (session :id)
+                                      (Integer/parseInt (params :feed))
+                                      5)))
   (GET "/layout.css"
     (serve-file "layout.css"))
   (ANY "*"
