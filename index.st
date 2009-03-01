@@ -2,18 +2,21 @@ $header(title=title)$
 
 <h1 class="title">$title$</h1>
 
+<div id="feed-list-container">
 <div id="feed-list">
   <h2>Feeds</h2>
- <ul>
+  <ul>
   $feeds:{feed |
     <li><a href="/?feed=$feed.id$">$feed.title$</a></li>   
   }$
- </ul>
+  </ul>
+</div>
 </div>
 
 $if(entries)$
+<div id="feed-content-container">
 <div id="feed-content">
-  <h2>Entries</h2>
+  <h2>$active_feed_title$</h2>
   <ul>
   $entries:{entry |
     $if(entry.active_p)$
@@ -22,8 +25,9 @@ $if(entries)$
     $else$
     <li><a id="entry-$entry.id$" href="/entries/$entry.id$?feed=$active_feed_id$#entry-$entry.id$">$entry.title$</a></li>
     $endif$
-   }$
+  }$
   </ul>
+</div>
 </div>
 $endif$
 

@@ -5,6 +5,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <title>$title$ &mdash; G&ouml;del-Gentzen Clojure Syndication Services Super System</title>
+  <link rel="stylesheet" href="/layout.css" type="text/css" />
 </head>
 
 <body>

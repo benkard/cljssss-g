@@ -1,0 +1,50 @@
+/* -*- mode: css -*- */
+
+h1 {
+    font-size: 2em;
+    margin: 0 0 0.75em 0.75em;
+}
+
+#feed-list-container {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 30%;
+    bottom: 0;
+    overflow: auto;
+    clear: none;
+    float: left;
+    z-index: 0;
+}
+
+#feed-list {
+    position: relative;
+    margin: 0 5px 0 5px;
+    padding: 0 5px 0 5px;
+    top: 3.5em;
+    border: 1px solid #888;
+    
+}
+
+body {
+    /* width: 80%; */
+    margin: 10px;
+}
+
+#feed-content-container {
+    position: absolute;
+    /* width: 70%; */
+    top: 0;
+    left: 30%;
+    right: 0;
+    display: block;
+    z-index: 1;
+}
+
+#feed-content {
+    padding: 0 5px 0 5px;
+    margin: 0 5px 0 5px;
+    position: relative;
+    top: 3.5em;
+    border: solid 1px #888;
+}

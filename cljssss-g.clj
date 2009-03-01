@@ -124,6 +124,7 @@
                                                                        feed
                                                                        active-entry-id))
                                   "active_feed_id" feed
+                                  "active_feed_title" (and feed (select-feed-name feed user))
                                   "title" "Subscriptions"})))))
 
 (defmacro with-session
@@ -160,6 +161,8 @@
     (with-session (show-subscriptions (session :id) (params :feed) nil)))
   (GET "/entries/*"
     (with-session (show-subscriptions (session :id) (params :feed) 5)))
+  (GET "/layout.css"
+    (serve-file "layout.css"))
   (ANY "*"
     (page-not-found)))
 
