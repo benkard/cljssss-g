@@ -161,12 +161,14 @@
       (lynxy-showfeed (session :id) (Integer/parseInt (params :feed)))))
   (GET "/"
     (with-session (show-subscriptions (session :id)
-                                      (Integer/parseInt (params :feed))
+                                      (and (params :feed)
+                                           (Integer/parseInt (params :feed)))
                                       nil)))
   (GET "/entries/*"
     (with-session (show-subscriptions (session :id)
-                                      (Integer/parseInt (params :feed))
-                                      5)))
+                                      (and (params :feed)
+                                           (Integer/parseInt (params :feed)))
+                                      5)))  ;FIXME
   (GET "/layout.css"
     (serve-file "layout.css"))
   (ANY "*"
