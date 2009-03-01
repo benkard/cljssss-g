@@ -190,6 +190,12 @@ to merely being replaced with a div element)?"
 (defn escape-string [string]
   (str-utils/re-gsub #"\"" "\\\\\"" string))
 
+(defn escape-uri [string]
+  ;; Easy?  Nope.
+  ;;(java.net.URLEncoder/encode string "UTF-8")
+  (str-utils/re-gsub #"=" "%3D"
+                     (str-utils/re-gsub #"&" "%26" string)))
+
 (defn print-xml [node]
   (if (string? node)
       (print (escape-xml node))
@@ -199,7 +205,9 @@ to merely being replaced with a div element)?"
           (when-not (= attr-name :shape)
             (printf " %s=\"%s\""
                     (name attr-name)
-                    (escape-string attr))))
+                    (if (#{:href :src} attr-name)
+                        (escape-string (escape-uri attr))
+                        (escape-string attr)))))
         (print ">")
         (doall (map print-xml content))
         (printf "</%s>" (name tag)))))
