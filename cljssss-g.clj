@@ -60,7 +60,7 @@
                                               "htmlurl" link})
                                            results)}))))))
 
-(defn select-feeds [user]
+(defn select-feeds [user active-feed-id]
   (sql/with-query-results
        results
        [(str "SELECT feed.id, feed.uri, feed.link, user_feed_link.title"
@@ -73,7 +73,8 @@
                       link :link}]
                   {"title" title
                    "id" id
-                   "link" link})
+                   "link" link
+                   "active_p" (= active-feed-id id)})
                 results))))
 
 (defn select-feed-name [user feed-id]
@@ -108,7 +109,7 @@
 (defn lynxy-feedlist [user]
   (with-db
     (.toString (doto (.getInstanceOf templates "simple-feed-list")
-                 (.setAttributes {"feeds" (select-feeds user)})))))
+                 (.setAttributes {"feeds" (select-feeds user nil)})))))
 
 (defn lynxy-showfeed [user feed]
   (with-db
@@ -119,7 +120,7 @@
 (defn show-subscriptions [user feed active-entry-id]
   (with-db
     (.toString (doto (.getInstanceOf templates "index")
-                 (.setAttributes {"feeds" (select-feeds user)
+                 (.setAttributes {"feeds" (select-feeds user feed)
                                   "entries" (when feed (select-entries user
                                                                        feed
                                                                        active-entry-id))

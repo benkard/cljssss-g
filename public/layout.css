@@ -26,6 +26,11 @@ h1 {
     
 }
 
+.active-feed-name {
+    font-weight: bold;
+    font-stretch: wider;
+}
+
 body {
     /* width: 80%; */
     margin: 10px;

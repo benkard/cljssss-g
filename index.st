@@ -7,7 +7,13 @@ $header(title=title)$
   <h2>Feeds</h2>
   <ul>
   $feeds:{feed |
-    <li><a href="/?feed=$feed.id$">$feed.title$</a></li>   
+    <li><a href="/?feed=$feed.id$"
+    $if(feed.active_p)$
+           class="active-feed-name"
+    $else$
+           class="inactive-feed-name"
+    $endif$
+           >$feed.title$</a></li>
   }$
   </ul>
 </div>
