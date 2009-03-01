@@ -27,9 +27,14 @@ $if(entries)$
   $entries:{entry |
     $if(entry.active_p)$
     $! FIXME: Show content inline if possible. !$
-    <li><a id="entry-$entry.id$" href="/entries/$entry.id$?feed=$active_feed_id$#entry-$entry.id$">$entry.title$</a></li>
+    <li class="full-entry">
+      <a id="entry-$entry.id$" href="$entry.link$"><h3>$entry.title$</h3></a>
+      <div class="entry-content">$xhtml_content$</div>
+    </li>
     $else$
-    <li><a id="entry-$entry.id$" href="/entries/$entry.id$?feed=$active_feed_id$#entry-$entry.id$">$entry.title$</a></li>
+    <li class="partial-entry">
+      <a id="entry-$entry.id$" href="/entries/$entry.id$?feed=$active_feed_id$#entry-$entry.id$">$entry.title$</a>
+    </li>
     $endif$
   }$
   </ul>

@@ -1,12 +1,15 @@
 (ns cljssss-g
   (require [clojure.xml :as xml]
+           [clojure.zip :as zip]
            [clojure.contrib.sql :as sql]
+           clojure.contrib.zip-filter.xml
            compojure)
   (import (org.antlr.stringtemplate StringTemplateGroup)
           (com.sun.syndication.io SyndFeedInput XmlReader)
           (com.sun.syndication.feed.synd SyndFeed SyndEntry)
           (java.net URL))
-  (use compojure))
+  (use compojure
+       clojure.contrib.zip-filter.xml))
 
 (Class/forName "org.sqlite.JDBC")
 
@@ -117,6 +120,102 @@
                  (.setAttributes {"feed_name" (select-feed-name user feed)
                                   "entries" (select-entries user feed nil)})))))
 
+(defn unescape [text] 
+  ;; FIXME
+  ;(StringEscapeUtils/unescapeHtml text)
+  text)
+
+(defn startparse-tagsoup [s ch]
+  (doto (org.ccil.cowan.tagsoup.Parser.)
+    (.setContentHandler ch)
+    (.parse s)))
+
+(defn make-string-input [string]
+  (org.xml.sax.InputSource. (java.io.StringReader. string)))
+
+(defn html->xhtml [html]
+  (xml/parse (make-string-input html) startparse-tagsoup))
+
+(defn text->xhtml [text]
+  {:tag :div :attrs nil :content [{:tag :p :attrs nil :content [text]}]})
+
+(defn safe-tag?
+  "Is the given foreign element safe for inclusion in the output?"
+  [xml]
+  (#{;; Formatting
+     :b :bdo :big :br :center :font :em :i :pre :s :small :span
+     :strike :strong :sub :sup :tt :u :xmp
+     ;; Semantic markup
+     :abbr :acronym :cite :code :del :dir :ins :kbd :q :samp :var
+     ;; Headings
+     :h1 :h2 :h3 :h4 :h5 :h6
+     ;; Hypertext
+     :a
+     ;; Text blocks
+     :blockquote :div :p :ol :ul
+     ;; Lists
+     :dd :dfn :dl :dt :li :menu :optgroup :option
+     ;; Tables
+     :caption :col :colgroup :table :tbody :td
+     ;; 
+     :area :img :hr :map
+     ;; Forms
+     :button :fieldset :form :input :label :legend :textarea :tfoot
+     :th :thead :tr
+     ;; Disallowed
+     ;;:address :applet :base :basefont :body :frame :frameset :head
+     ;;:html :iframe :isindex :link :meta :noframes :noscript :object
+     ;;:param :script :style :title
+     }
+   (xml :tag)))
+
+(defn tag-to-kill?
+  "Is the given element to be removed from the content completely (as opposed
+to merely being replaced with a div element)?"
+  [xml]
+  (#{:applet :base :basefont :frame :frameset :head :iframe :isindex
+     :link :meta :object :param :script :style :title}
+   (xml :tag)))
+
+(defn retag [xml new-tag-name]
+  (assoc xml
+    :tag new-tag-name
+    :attrs nil))
+
+(defn prepare-content
+  [xml]
+  "Make HTML content safe for displaying by removing suspicious content."
+  ;; FIXME: Output a string rather than a tree.
+  (let [tree (-> (zip/xml-zip xml)
+                 (zip/edit retag :div))]
+    (loop [loc tree]
+      (if (zip/end? loc)
+          (zip/root loc)
+          (recur (let [node (zip/node loc)]
+                   (zip/next
+                    (cond (or (string? node) (safe-tag? node)) loc
+                          (tag-to-kill? node) (zip/remove loc)
+                          true (zip/edit loc retag :span)))))))))
+
+(defn entry-xhtml-content [entry]
+  (sql/with-query-results
+       [{content :content, content-type :content_type}]
+       [(str "SELECT content, content_type"  ;, content_source
+             " FROM entry"
+             " WHERE entry.id = ?")
+        entry]
+    (let [content-source nil]
+      (cond (nil? content)
+              nil
+            (= content-type "xhtml")
+              (prepare-content (xml/parse (make-string-input content)))
+            (or (= content-type "html") (= content-type "text/html"))
+              (prepare-content (html->xhtml (unescape content)))
+            (or (= content-type "text") (nil? content-type))
+              (prepare-content (text->xhtml content))
+            true
+              nil))))
+
 (defn show-subscriptions [user feed active-entry-id]
   (with-db
     (.toString (doto (.getInstanceOf templates "index")
@@ -127,7 +226,9 @@
                                   "active_feed_id" feed
                                   "active_feed_title" (and feed
                                                            (select-feed-name user feed))
-                                  "title" "Subscriptions"})))))
+                                  "title" "Subscriptions"
+                                  "xhtml_content" (and active-entry-id
+                                                       (entry-xhtml-content active-entry-id))})))))
 
 (defmacro with-session
   "Rebind Compojure's magic lexical variables as vars."
@@ -297,6 +398,7 @@
                       [:language "text"]
                       [:content "blob"]
                       [:content_type "text"]
+                      [:content_source "text"]
                       [:iri "text"]
                       [:link "text"]
                       [:published "timestamp"]
