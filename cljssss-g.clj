@@ -30,8 +30,8 @@
      (sql/transaction
        ~@body)))
 
-(def web-vars '(context cookies headers method params request response
-                route session))
+(def web-vars '(context cookies headers method mimetype params session
+                url path))
 
 (defmacro define-web-vars []
   `(do
