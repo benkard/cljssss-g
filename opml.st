@@ -14,4 +14,9 @@
  </body>
 </opml>
 
-	    
+$!
+Local Variables:
+  mode: xml
+  coding: utf-8
+End:
+!$
