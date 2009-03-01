@@ -185,7 +185,9 @@ to merely being replaced with a div element)?"
 
 (defn escape-xml [string]
   (str-utils/re-gsub #"<" "&#60;"
-                     (str-utils/re-gsub #">" "&#62;" string)))
+                     (str-utils/re-gsub #">" "&#62;"
+                                        (str-utils/re-gsub #"&" "&#38;"
+                                                           string))))
 
 (defn escape-string [string]
   (str-utils/re-gsub #"\"" "\\\\\"" string))
