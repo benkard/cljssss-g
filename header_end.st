@@ -1,5 +1,6 @@
-$header_start(title=title)$
-$header_end()$
+</head>
+
+<body>
 
 $!
 Local Variables:
