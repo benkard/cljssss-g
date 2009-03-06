@@ -1,4 +1,7 @@
-$header(title=title)$
+$header_start(title=title)$
+<script src="/yui3/build/yui/yui-min.js" type="text/javascript"></script>
+<script src="/feed-list.js" type="text/javascript"></script>
+$header_end()$
 
 <h1 class="title">$title$</h1>
 
@@ -27,15 +30,15 @@ $if(entries)$
   $entries:{entry |
     $if(entry.active_p)$
     $! FIXME: Show content inline if possible. !$
-    <li class="full-entry">
-      <a id="entry-$entry.id$" href="$entry.link$"><h3>$entry.title$</h3></a>
+    <li class="full-entry" id="entry-$entry.id$-container">
+      <a class="entry-link" id="entry-$entry.id$" href="$entry.link$"><h3>$entry.title$</h3></a>
       $if(xhtml_content_p)$
       <div class="entry-content">$xhtml_content$</div>
       $endif$
     </li>
     $else$
-    <li class="partial-entry">
-      <a id="entry-$entry.id$" href="/entries/$entry.id$?feed=$active_feed_id$#entry-$entry.id$">$entry.title$</a>
+    <li class="partial-entry" id="entry-$entry.id$-container">
+      <a class="entry-link" id="entry-$entry.id$" href="/entries/$entry.id$?feed=$active_feed_id$#entry-$entry.id$">$entry.title$</a>
     </li>
     $endif$
   }$

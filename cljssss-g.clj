@@ -272,6 +272,21 @@ to merely being replaced with a div element)?"
                           "xhtml_content_p" (not (nil? xhtml-content))
                           "xhtml_content" xhtml-content}))))))
 
+(defn show-entry-xml [entry]
+  (with-db
+    (sql/with-query-results
+        [{link :link, title :title}]
+        [(str "SELECT entry.link, entry.title, entry.id"
+              " FROM entry, feed_entry_link, user_feed_link"
+              " WHERE entry.id = ?")
+         entry]
+      (str "<?xml version='1.0'?>"
+           "<response>"
+           "<uri>" link "</uri>"
+           "<title>" title "</title>"
+           "<content>" (escape-xml (entry-xhtml-content entry)) "</content>"
+           "</response>"))))
+
 (defmacro with-session
   "Rebind Compojure's magic lexical variables as vars."
   [& body]
@@ -313,6 +328,8 @@ to merely being replaced with a div element)?"
                                         (and (params :feed)
                                              (Integer/parseInt (params :feed)))
                                         (Integer/parseInt entry-id-string)))))
+  (GET "/entry-xml"
+    (with-session (show-entry-xml (params :id))))
   (GET "*"
     (serve-file path))
   (ANY "*"
