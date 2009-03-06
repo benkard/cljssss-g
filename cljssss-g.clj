@@ -313,8 +313,8 @@ to merely being replaced with a div element)?"
                                         (and (params :feed)
                                              (Integer/parseInt (params :feed)))
                                         (Integer/parseInt entry-id-string)))))
-  (GET "/layout.css"
-    (serve-file "layout.css"))
+  (GET "*"
+    (serve-file path))
   (ANY "*"
     (page-not-found)))
 
