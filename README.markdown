@@ -20,6 +20,13 @@ CljSSSS<sup>g</sup> requires the following items to be on the class path:
 
 ## Deployment
 
+First, if you want the fancy JavaScript-based UI features, you need to either
+
+ 1. call `git submodule update --init`, **or**
+ 2. download the [Yahoo! UI Library, version 3](http://developer.yahoo.com/yui/3/), and extract it into the directory `public/yui3` (in such a way that `public/yui3/src` contains the JavaScript code).
+
+If you decide not to do this, however, you're still left with a fully-functional, though boring, HTML-based UI.
+
 In order to run CljSSSS<sup>g</sup>, load the main file, `cljssss-g.clj`.
 
 You will probably want to populate your database with a couple of user records before trying to log in.  See the bottom of the `cljssss-g.clj` file for the database schema and examples.
